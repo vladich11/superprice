@@ -2,11 +2,8 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    anthropic_api_key: str = ""
-    openism_api_key: str
-    openism_base_url: str = "https://data.openisraelisupermarkets.co.il"
-    firebase_credentials_path: str = "./firebase-credentials.json"
     database_url: str = ""
+    firebase_credentials_path: str = "./secrets/firebase-credentials.json"
 
     class Config:
         env_file = ".env"

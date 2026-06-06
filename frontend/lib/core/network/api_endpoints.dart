@@ -11,8 +11,7 @@ enum ApiEndpoint {
   parseItems,
   cartComparison,
   replacements,
-  backendProductSearch,
-  backendHealthChecks;
+  backendProductSearch;
 
   String path([String? param]) => switch (this) {
         ApiEndpoint.chains => '/chains/',
@@ -28,6 +27,5 @@ enum ApiEndpoint {
         ApiEndpoint.cartComparison => '/api/cart-comparison',
         ApiEndpoint.replacements => '/api/replacements/$param',
         ApiEndpoint.backendProductSearch => '/api/products/search',
-        ApiEndpoint.backendHealthChecks => '/api/health-checks',
       };
 }

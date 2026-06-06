@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:superprice/core/extensions/build_context_ext.dart';
 import 'package:superprice/features/comparison/presentation/comparison_screen.dart';
-import 'package:superprice/features/health/presentation/health_screen.dart';
 import 'package:superprice/features/home/presentation/home_screen.dart';
 import 'package:superprice/features/new_list/presentation/new_list_screen.dart';
 
@@ -19,8 +18,8 @@ final appRouter = GoRouter(
           builder: (_, __) => const HomeScreen(),
         ),
         GoRoute(
-          path: '/health',
-          builder: (_, __) => const HealthScreen(),
+          path: '/map',
+          builder: (_, __) => const _MapPlaceholder(),
         ),
         GoRoute(
           path: '/my-lists',
@@ -57,7 +56,7 @@ class _MainShellState extends State<_MainShell> {
     setState(() => _index = i);
     switch (i) {
       case 0:
-        context.go('/health');
+        context.go('/map');
       case 1:
         context.go('/');
       case 2:
@@ -76,9 +75,9 @@ class _MainShellState extends State<_MainShell> {
         unselectedItemColor: Colors.grey,
         items: [
           const BottomNavigationBarItem(
-            icon: Icon(Icons.health_and_safety_outlined),
-            activeIcon: Icon(Icons.health_and_safety),
-            label: 'תקינות',
+            icon: Icon(Icons.map_outlined),
+            activeIcon: Icon(Icons.map),
+            label: 'מפה',
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.show_chart),
@@ -92,6 +91,17 @@ class _MainShellState extends State<_MainShell> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _MapPlaceholder extends StatelessWidget {
+  const _MapPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(child: Icon(Icons.map_outlined, size: 64, color: Colors.grey)),
     );
   }
 }

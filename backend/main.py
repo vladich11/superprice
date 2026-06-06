@@ -1,8 +1,20 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import parse, cart, replacements, products, health_checks
 
-app = FastAPI(title="Superprice API", version="1.0.0")
+from core.db import init_db, close_pool
+from routers import cart, products
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db()  # ensure tables exist
+    yield
+    await close_pool()
+
+
+app = FastAPI(title="Superprice API", version="2.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -11,13 +23,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(parse.router)
 app.include_router(cart.router)
-app.include_router(replacements.router)
 app.include_router(products.router)
-app.include_router(health_checks.router)
 
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "v": "test123"}
+    return {"status": "ok"}
