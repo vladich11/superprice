@@ -113,38 +113,42 @@ async def main():
     dsn = os.environ["DATABASE_URL"].replace("?sslmode=require", "")
     pool = await asyncpg.create_pool(dsn, ssl="require", min_size=1, max_size=4)
 
+    import shutil
+    succeeded = 0
+
     for enum_name, chain_name in CHAINS:
         print(f"\n=== {chain_name} ({enum_name}) ===", flush=True)
-        # Download one PriceFull snapshot (one store) for this chain
-        task = ScarpingTask(
-            enabled_scrapers=[enum_name],
-            files_types=["PRICE_FULL_FILE"],
-            multiprocessing=1,
-        )
-        task.start(limit=1)
-        task.join()
+        # Reset dumps so a stale file from a prior/failed chain can't be misread
+        shutil.rmtree(DUMP_DIR, ignore_errors=True)
+        try:
+            task = ScarpingTask(
+                enabled_scrapers=[enum_name],
+                files_types=["PRICE_FULL_FILE"],
+                multiprocessing=1,
+            )
+            task.start(limit=1)
+            task.join()
 
-        files = glob.glob(f"{DUMP_DIR}/**/*", recursive=True)
-        price_files = [f for f in files if os.path.isfile(f) and "price" in f.lower()]
-        if not price_files:
-            print(f"  no file downloaded for {enum_name}", flush=True)
+            files = glob.glob(f"{DUMP_DIR}/**/*", recursive=True)
+            price_files = [f for f in files if os.path.isfile(f) and "price" in f.lower()]
+            if not price_files:
+                print(f"  no file downloaded for {enum_name}", flush=True)
+                continue
+
+            path = max(price_files, key=os.path.getmtime)
+            chain_id, items = parse_pricefull(path)
+            print(f"  downloaded {os.path.basename(path)} ({os.path.getsize(path)} bytes), parsed {len(items)} items", flush=True)
+            if not items:
+                continue
+
+            n = await upsert(pool, chain_id or enum_name, chain_name, items)
+            print(f"  upserted {n} products/prices (chain_id={chain_id})", flush=True)
+            succeeded += 1
+        except Exception as e:
+            import traceback
+            print(f"  ERROR scraping {enum_name}: {type(e).__name__}: {e}", flush=True)
+            traceback.print_exc()
             continue
-
-        path = max(price_files, key=os.path.getmtime)
-        chain_id, items = parse_pricefull(path)
-        if not items:
-            print(f"  parsed 0 items from {path}", flush=True)
-            continue
-
-        n = await upsert(pool, chain_id or enum_name, chain_name, items)
-        print(f"  upserted {n} products/prices (chain_id={chain_id})", flush=True)
-
-        # Clear dumps between chains so the latest-file glob stays correct
-        for f in price_files:
-            try:
-                os.remove(f)
-            except OSError:
-                pass
 
     async with pool.acquire() as conn:
         total = await conn.fetchval("SELECT count(*) FROM prices")
