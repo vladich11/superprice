@@ -124,10 +124,12 @@ async def main():
             task = ScarpingTask(
                 enabled_scrapers=[enum_name],
                 files_types=["PRICE_FULL_FILE"],
+                limit=1,                # one store per chain (lean POC)
                 multiprocessing=1,
+                lookup_in_db=False,     # no external status DB
+                suppress_exception=True,
             )
-            task.start(limit=1)
-            task.join()
+            task.start()                # synchronous in 0.5.9 (no join needed)
 
             files = glob.glob(f"{DUMP_DIR}/**/*", recursive=True)
             price_files = [f for f in files if os.path.isfile(f) and "price" in f.lower()]
